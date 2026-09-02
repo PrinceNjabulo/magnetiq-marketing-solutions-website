@@ -1,0 +1,40 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background-color: #f5f2ea;
+  color: #0a1a33;
+}
+
+::selection {
+  background-color: #3b82f6;
+  color: white;
+}
+
+.eyebrow {
+  @apply font-mono text-xs tracking-[0.2em] uppercase;
+}
+
+.eyebrow-rule {
+  @apply inline-block h-px w-8 bg-current align-middle mr-3 origin-left;
+}
+
+@keyframes fillProgress {
+  from {
+    width: 0%;
+  }
+  to {
+    width: 100%;
+  }
+}
+
+.animate-fill {
+  animation-name: fillProgress;
+  animation-timing-function: linear;
+  animation-fill-mode: forwards;
+}
