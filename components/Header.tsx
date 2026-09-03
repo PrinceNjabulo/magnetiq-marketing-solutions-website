@@ -5,7 +5,7 @@ import { useState } from "react";
 import { MessageCircle } from "lucide-react";
 import { Logo } from "@/components/Logo";
 import { WhatsAppCTA } from "@/components/WhatsAppButton";
-import { brand } from "@/lib/content";
+import { whatsappLink, whatsappMessages } from "@/lib/content";
 
 export function Header() {
   const [scrolled, setScrolled] = useState(false);
@@ -31,7 +31,7 @@ export function Header() {
           <Logo light={!scrolled} />
         </a>
         <a
-          href={brand.whatsappHref}
+          href={whatsappLink(whatsappMessages.consultation)}
           target="_blank"
           rel="noopener noreferrer"
           aria-label="Book Free Consultation on WhatsApp"
@@ -41,6 +41,7 @@ export function Header() {
         </a>
         <WhatsAppCTA
           label="Book Free Consultation"
+          message={whatsappMessages.consultation}
           className="hidden sm:inline-flex sm:!px-6 sm:!py-3"
         />
       </div>

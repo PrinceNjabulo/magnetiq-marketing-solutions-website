@@ -6,6 +6,22 @@ export const brand = {
   whatsappHref: "https://wa.me/27662110962",
 };
 
+// Builds a wa.me link that pre-fills the chat with a context-specific
+// message, so a tap on any CTA tells us what the visitor actually wants
+// instead of opening WhatsApp blank.
+export function whatsappLink(message: string) {
+  return `${brand.whatsappHref}?text=${encodeURIComponent(message)}`;
+}
+
+export const whatsappMessages = {
+  consultation: "Hi MagnetiQ, I'd like to book a free consultation.",
+  heroConsultation: (niche: string) =>
+    `Hi MagnetiQ, I'd like to book a free consultation for my ${niche.toLowerCase()}.`,
+  pricingTier: (tierName: string, price: string) =>
+    `Hi MagnetiQ, I'm interested in the ${tierName} package (from ${price}) — can we chat?`,
+  footer: "Hi MagnetiQ, I'd like to get my business online — can we chat?",
+};
+
 export type Niche = {
   id: string;
   label: string;
