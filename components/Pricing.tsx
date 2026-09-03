@@ -2,7 +2,7 @@
 
 import { motion } from "framer-motion";
 import { Check } from "lucide-react";
-import { pricing, type PricingTier } from "@/lib/content";
+import { pricing, whatsappMessages, type PricingTier } from "@/lib/content";
 import { WhatsAppCTA } from "@/components/WhatsAppButton";
 import { EyebrowLine, Reveal, RevealGroup, RevealItem } from "@/components/motion/Reveal";
 
@@ -71,7 +71,11 @@ function PricingCard({ tier }: { tier: PricingTier }) {
           <span className="font-semibold">Perfect for:</span> {tier.perfectFor}
         </p>
 
-        <WhatsAppCTA label={tier.cta} className="mt-6 w-full" />
+        <WhatsAppCTA
+          label={tier.cta}
+          message={whatsappMessages.pricingTier(tier.name, tier.price)}
+          className="mt-6 w-full"
+        />
       </motion.div>
     </RevealItem>
   );

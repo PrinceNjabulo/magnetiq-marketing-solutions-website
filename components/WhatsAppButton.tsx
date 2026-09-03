@@ -2,25 +2,28 @@
 
 import { motion } from "framer-motion";
 import { MessageCircle } from "lucide-react";
-import { brand } from "@/lib/content";
+import { whatsappLink, whatsappMessages } from "@/lib/content";
 import { MagneticLink } from "@/components/motion/MagneticButton";
 
 export function WhatsAppCTA({
   label,
+  message = whatsappMessages.consultation,
   className = "",
   variant = "solid",
 }: {
   label: string;
+  message?: string;
   className?: string;
   variant?: "solid" | "outline";
 }) {
   const base =
     "inline-flex items-center justify-center gap-2 rounded-full px-6 py-3.5 font-semibold transition-shadow";
+  const href = whatsappLink(message);
 
   if (variant === "solid") {
     return (
       <MagneticLink
-        href={brand.whatsappHref}
+        href={href}
         target="_blank"
         rel="noopener noreferrer"
         className={`${base} bg-brand-green text-navy shadow-glow-green hover:shadow-[0_0_60px_-6px_rgba(34,197,94,0.65)] ${className}`}
@@ -33,7 +36,7 @@ export function WhatsAppCTA({
 
   return (
     <motion.a
-      href={brand.whatsappHref}
+      href={href}
       target="_blank"
       rel="noopener noreferrer"
       whileHover={{ scale: 1.03 }}
@@ -46,10 +49,12 @@ export function WhatsAppCTA({
 }
 
 export function FloatingWhatsApp() {
+  const href = whatsappLink(whatsappMessages.consultation);
+
   return (
     <>
       <motion.a
-        href={brand.whatsappHref}
+        href={href}
         target="_blank"
         rel="noopener noreferrer"
         aria-label="Chat on WhatsApp"
@@ -71,7 +76,7 @@ export function FloatingWhatsApp() {
         className="fixed bottom-0 left-0 right-0 z-50 flex sm:hidden border-t border-navy/10 bg-cream/95 backdrop-blur px-4 py-3"
       >
         <a
-          href={brand.whatsappHref}
+          href={href}
           target="_blank"
           rel="noopener noreferrer"
           className="flex w-full items-center justify-center gap-2 rounded-full bg-brand-green py-3 font-semibold text-navy"

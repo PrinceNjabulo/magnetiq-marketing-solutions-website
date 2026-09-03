@@ -1,7 +1,7 @@
 "use client";
 
 import { AnimatePresence, motion } from "framer-motion";
-import { hero, niches } from "@/lib/content";
+import { hero, niches, whatsappMessages } from "@/lib/content";
 import { useRotator } from "@/lib/useRotator";
 import { HeroBackground } from "@/components/HeroBackground";
 import { HeroRotator } from "@/components/HeroRotator";
@@ -54,7 +54,10 @@ export function Hero() {
             transition={{ delay: 0.4, duration: 0.6 }}
             className="mt-8 flex flex-wrap items-center gap-4"
           >
-            <WhatsAppCTA label={hero.primaryCta} />
+            <WhatsAppCTA
+              label={hero.primaryCta}
+              message={whatsappMessages.heroConsultation(active.word)}
+            />
             <MagneticLink
               href="#pricing"
               className="rounded-full border-2 border-white/25 px-6 py-3.5 font-semibold text-white transition-colors hover:border-white/50"
