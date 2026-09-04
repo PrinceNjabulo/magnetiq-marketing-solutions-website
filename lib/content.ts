@@ -244,6 +244,15 @@ export const whyChoose = {
   closingLine: "Not just a website — a lead-generation tool built for your business.",
 };
 
+export const audit = {
+  eyebrow: "Free website audit",
+  heading: "Find out what's costing you customers",
+  subhead:
+    "Drop in your website URL and we'll run a full automated audit — SEO, speed, mobile experience, and conversion opportunities — then send you a plain-English report.",
+  cta: "Run My Free Audit",
+  formNote: "No spam — we'll only use this to send your report and follow up about it.",
+};
+
 export const footer = {
   mission:
     "Professional websites built for local businesses — attract more customers, look more credible, get more bookings.",

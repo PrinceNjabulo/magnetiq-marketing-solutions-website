@@ -1,0 +1,95 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+enum AuditStatus {
+  pending
+  crawling
+  analyzing
+  generating
+  done
+  failed
+}
+
+enum FollowUpType {
+  report_email
+  reminder
+  book_call_nudge
+}
+
+enum FollowUpStatus {
+  scheduled
+  sent
+  cancelled
+}
+
+model Lead {
+  id          String   @id @default(cuid())
+  email       String
+  companyName String?
+  websiteUrl  String
+  source      String   @default("audit_landing_page")
+  createdAt   DateTime @default(now())
+
+  audits    Audit[]
+  followUps FollowUp[]
+
+  @@index([email])
+}
+
+model Audit {
+  id            String      @id @default(cuid())
+  lead          Lead        @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  leadId        String
+  url           String
+  status        AuditStatus @default(pending)
+  failureReason String?
+
+  rawCrawlJson   Json?
+  analysisJson   Json?
+  reportMarkdown String?
+  reportHtml     String?
+
+  createdAt       DateTime  @default(now())
+  completedAt     DateTime?
+  // Claim marker for report generation: unlike the crawl/analyze steps,
+  // there's no distinct AuditStatus value to flip into as a claim before
+  // "done" (flipping there early would show a failed attempt as complete),
+  // and a duplicate generation call has a real dollar cost, unlike the
+  // free/cheap earlier stages. Set atomically (WHERE reportStartedAt IS
+  // NULL) at the start of report generation.
+  reportStartedAt DateTime?
+
+  followUps FollowUp[]
+
+  @@index([leadId])
+  @@index([status])
+}
+
+model FollowUp {
+  id          String         @id @default(cuid())
+  lead        Lead           @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  leadId      String
+  audit       Audit          @relation(fields: [auditId], references: [id], onDelete: Cascade)
+  auditId     String
+  type        FollowUpType
+  status      FollowUpStatus @default(scheduled)
+  scheduledAt DateTime
+  sentAt      DateTime?
+
+  @@index([leadId])
+  @@index([auditId])
+  @@index([status, scheduledAt])
+}
