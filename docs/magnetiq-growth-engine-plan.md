@@ -70,13 +70,18 @@ follow_ups
 - [x] `tsc --noEmit`, `next lint`, and `next build` all pass; no changes to `prisma/schema.prisma` in this phase (Phase 0's tables are used as-is).
 - **Exit criteria met**: submitting a URL creates `Lead`/`Audit` rows and shows a waiting state that updates as status changes.
 
-### Phase 2 — Website crawler (single page)
-- Route Handler / server action that fetches the submitted URL, parses HTML with cheerio.
-- Extract: title/meta tags, heading structure, image alt coverage, internal/external link counts, viewport meta, structured data presence, word count, forms/CTAs present.
-- Call PageSpeed Insights API (mobile + desktop) for performance/Core Web Vitals + a subset of Lighthouse SEO/best-practices/accessibility audits.
-- Store raw results in `audits.raw_crawl_json`, set status `analyzing`.
-- Handle failure modes: unreachable URL, non-HTML response, timeout — mark audit `failed` with a reason, surface a friendly error to the lead.
-- **Exit criteria**: given a real URL, raw crawl JSON is populated and inspectable.
+### Phase 2 — Website crawler (single page) ✅ done
+- [x] `POST /api/audit/[id]/process` (`app/api/audit/[id]/process/route.ts`) — claims the job atomically (`updateMany` on `status: "pending"` guards against double-processing, verified under a real concurrent-request race: one call processed, the other correctly no-op'd), fetches the page, extracts data, calls PageSpeed, stores `rawCrawlJson`, and sets status to `analyzing` (or `failed` with a reason).
+- [x] `lib/crawler.ts` — network fetch with a 15s timeout, manual redirect following (capped at 5 hops, **re-validating SSRF safety on every hop**), content-type check (rejects non-HTML), and a streamed 5MB body-size cap.
+- [x] `lib/ssrf.ts` — resolves the hostname via DNS and rejects private/loopback/link-local/multicast addresses (covers the common case: a public domain whose DNS record points at an internal address, e.g. the cloud metadata IP). This was added beyond the original plan text because Phase 2 is the point where the app first fetches a user-submitted URL server-side — the SSRF exposure becomes live here, not in Phase 8, so the essential guard couldn't wait. Full DNS-rebinding-proof pinning (validating the IP actually connected to, not just the one resolved beforehand) is still deferred to Phase 8.
+- [x] `lib/pageParser.ts` — cheerio-based extraction: title, meta description, viewport meta, language, heading counts + h1 text, image alt coverage, internal/external link counts, word count, structured data (`ld+json`) blocks, forms, `tel:`/`mailto:` links.
+- [x] `lib/pagespeed.ts` — PageSpeed Insights v5 (mobile + desktop, in parallel), pulling performance/SEO/accessibility/best-practices scores and Core Web Vitals (LCP, CLS, TBT, FCP, Speed Index). Failures here are **non-fatal** — caught individually via `Promise.allSettled`, so a PageSpeed quota/timeout doesn't fail the whole audit (verified live: PageSpeedran out of quota with no API key configured, and the audit still reached `analyzing` with the crawl data intact and `pageSpeed.mobileError`/`desktopError` recorded).
+- [x] `components/AuditStatusPoller.tsx` triggers `.../process` once on mount if the audit is still `pending`, so processing starts automatically when the lead lands on the status page — no queue/cron needed for a single-page crawl.
+- [x] Verified end to end against real, live external sites (this sandbox's egress is allowlisted and blocks arbitrary domains, but `pypi.org`/`registry.npmjs.org` are reachable): a real crawl of pypi.org produced correct extracted data (title, meta description, headings, images, 55 links split internal/external, forms, word count) and handled the PageSpeed 429 gracefully; a non-HTML target (`registry.npmjs.org`, JSON) correctly failed the audit with `"This URL didn't return a web page we can analyze."`, shown on the status page. Pure logic (SSRF IP-range checks, HTML extraction) additionally unit-tested in isolation.
+- [x] `tsc --noEmit`, `next lint`, `next build` all pass. No `prisma/schema.prisma` changes.
+- **Exit criteria met**: given a real URL, `rawCrawlJson` is populated and inspectable (confirmed by reading it back from the database after a live crawl).
+
+**Known gap carried to Phase 8**: the in-memory per-IP rate limiter from Phase 1 doesn't yet cover `POST /api/audit/[id]/process` — the create endpoint is limited, but a client could hit `/process` on many different audit ids to burn PageSpeed quota. Low risk today (each call still requires a valid, already-created audit id, and it's a no-op once claimed), but worth closing when abuse-hardening work happens.
 
 ### Phase 3 — Automated analysis
 - Deterministic scoring/flagging layer (no AI yet) that turns raw crawl data into structured findings across the six categories: SEO, Performance, Mobile/UX, Content, Technical issues, Conversion opportunities.

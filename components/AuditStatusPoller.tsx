@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ACTIVE_AUDIT_STATUSES, AUDIT_STATUS_COPY, type AuditStatusValue } from "@/lib/audit";
 
 const POLL_INTERVAL_MS = 4000;
@@ -14,6 +14,17 @@ export type AuditStatusPayload = {
 
 export function AuditStatusPoller({ initialAudit }: { initialAudit: AuditStatusPayload }) {
   const [auditData, setAuditData] = useState(initialAudit);
+  const initialStatusRef = useRef(initialAudit.status);
+
+  // Kick off processing once, only if the page loaded with the audit still
+  // queued. The API route is idempotent (it claims pending -> crawling
+  // atomically), so this is safe even if it somehow fired twice.
+  useEffect(() => {
+    if (initialStatusRef.current !== "pending") return;
+    fetch(`/api/audit/${initialAudit.id}/process`, { method: "POST" }).catch(() => {
+      // If this fails, the audit just stays "pending" until the next visit.
+    });
+  }, [initialAudit.id]);
 
   useEffect(() => {
     if (!ACTIVE_AUDIT_STATUSES.includes(auditData.status)) return;
