@@ -60,11 +60,15 @@ follow_ups
 - **Local setup**: copy `.env.example` to `.env`, fill in `DATABASE_URL` (pooled, port 6543) and `DIRECT_URL` (direct, port 5432) from the Supabase dashboard (Project Settings → Database → Connection string, project ref `wnxkwxgvjwpchaztnhol`) — the password isn't retrievable via the API/MCP connector, so it has to come from the dashboard. `npm run db:studio` then points at the live tables.
 - **Exit criteria met**: `Lead` / `Audit` / `FollowUp` tables exist on the connected Supabase project and round-trip data correctly.
 
-### Phase 1 — Audit landing page + lead capture
-- New route (e.g. `/audit`) with a form: URL + email (+ optional company name).
-- Client-side URL validation, basic bot protection (honeypot field + rate limit by IP).
-- On submit: create `lead` + `audit` row (status `pending`), redirect to a "your report is being generated" status page that polls audit status.
-- **Exit criteria**: submitting a URL creates DB rows and shows a waiting state.
+### Phase 1 — Audit landing page + lead capture ✅ done
+- [x] `/audit` — landing page with the URL + work email + optional company name form (`app/audit/page.tsx`, `components/AuditForm.tsx`), styled to match the existing site (navy hero band + floating white card, `Header`/`Footer` reused).
+- [x] `POST /api/audit` (`app/api/audit/route.ts`) — validates email + URL (auto-prepends `https://`, rejects localhost/private hosts), honeypot field (`nickname`, hidden via the accessible `sr-only` pattern) silently rejects bots, in-memory per-IP rate limit (5 requests / 15 min — documented as an MVP-only mechanism since it resets per cold start and isn't shared across instances; revisit with a shared store in Phase 8 if needed), and a 5-minute duplicate-submission throttle (same email+URL reuses the existing audit instead of creating a new row).
+- [x] Creates a `Lead` + `Audit` (status `pending`) via a single nested Prisma write, returns the new `auditId`.
+- [x] `/audit/[id]` — status page (`app/audit/[id]/page.tsx`) that server-renders the current status, then polls `GET /api/audit/[id]` (`app/api/audit/[id]/route.ts`) every 4s via `components/AuditStatusPoller.tsx` while the audit is still in progress; 404s for an unknown id.
+- [x] Added a "Free Website Audit" link to `Header` so the funnel is actually reachable from the live site nav.
+- [x] Verified end to end against a local ephemeral Postgres (`npx prisma dev`, migration deployed with `prisma migrate deploy`) with the app's own dev server: invalid email/URL rejected, honeypot rejected, valid submission creates rows and returns an id, duplicate submission within 5 minutes reuses the same id instead of creating a second row, rate limiter returns 429 on the 6th request within the window, status page and API both 404 on an unknown id, and the status page renders and polls correctly.
+- [x] `tsc --noEmit`, `next lint`, and `next build` all pass; no changes to `prisma/schema.prisma` in this phase (Phase 0's tables are used as-is).
+- **Exit criteria met**: submitting a URL creates `Lead`/`Audit` rows and shows a waiting state that updates as status changes.
 
 ### Phase 2 — Website crawler (single page)
 - Route Handler / server action that fetches the submitted URL, parses HTML with cheerio.

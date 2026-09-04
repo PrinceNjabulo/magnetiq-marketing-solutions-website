@@ -39,11 +39,21 @@ export function Header() {
         >
           <MessageCircle className="h-5 w-5" strokeWidth={2.5} />
         </a>
-        <WhatsAppCTA
-          label="Book Free Consultation"
-          message={whatsappMessages.consultation}
-          className="hidden sm:inline-flex sm:!px-6 sm:!py-3"
-        />
+        <div className="hidden items-center gap-6 sm:flex">
+          <a
+            href="/audit"
+            className={`text-sm font-semibold transition-colors ${
+              scrolled ? "text-navy/70 hover:text-navy" : "text-white/80 hover:text-white"
+            }`}
+          >
+            Free Website Audit
+          </a>
+          <WhatsAppCTA
+            label="Book Free Consultation"
+            message={whatsappMessages.consultation}
+            className="!px-6 !py-3"
+          />
+        </div>
       </div>
     </motion.header>
   );
