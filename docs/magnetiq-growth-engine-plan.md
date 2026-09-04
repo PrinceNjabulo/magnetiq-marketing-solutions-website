@@ -48,11 +48,17 @@ follow_ups
 
 ## Phases
 
-### Phase 0 — Foundations
-- Add Postgres + Prisma to the repo, define schema above, run first migration.
-- Add environment config for: DB URL, PageSpeed API key, Anthropic API key, email provider key.
-- Set up `docs/` conventions and a `.env.example`.
-- **Exit criteria**: `npx prisma studio` shows empty `leads`/`audits` tables locally.
+### Phase 0 — Foundations ✅ (schema + tooling done; first migration pending a provisioned DB)
+- [x] Add Prisma (`prisma`, `@prisma/client`) with the `leads` / `audits` / `follow_ups` schema above (`prisma/schema.prisma`).
+- [x] Prisma client singleton at `lib/db.ts` for use in Route Handlers (Next.js hot-reload-safe pattern).
+- [x] `.env.example` documenting `DATABASE_URL`, `ANTHROPIC_API_KEY`, `PAGESPEED_API_KEY`, `RESEND_API_KEY`.
+- [x] `postinstall` runs `prisma generate` automatically; added `db:generate` / `db:migrate` / `db:studio` npm scripts.
+- [x] Verified: `prisma validate`, `tsc --noEmit`, `next lint`, and `next build` all pass with the new deps in place.
+- [ ] **Still needed**: a real Postgres instance (Neon or Supabase recommended). Once provisioned:
+  1. Copy `.env.example` to `.env` and fill in `DATABASE_URL`.
+  2. Run `npm run db:migrate` to create the first migration and apply the schema.
+  3. `npm run db:studio` should show empty `Lead` / `Audit` / `FollowUp` tables.
+- **Exit criteria**: `npx prisma studio` shows empty `leads`/`audits` tables locally. *(Blocked only on DB provisioning — schema/tooling side is complete.)*
 
 ### Phase 1 — Audit landing page + lead capture
 - New route (e.g. `/audit`) with a form: URL + email (+ optional company name).
