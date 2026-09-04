@@ -23,7 +23,7 @@ automated follow-up sequence → sales call
 
 | Concern | Choice | Why |
 |---|---|---|
-| Database | Postgres (Neon or Supabase — serverless-friendly) via Prisma | Free tier fits MVP volume, works well with serverless functions, easy migration path to a CRM sync later |
+| Database | Postgres via Supabase + Prisma (project `wnxkwxgvjwpchaztnhol`, eu-west-1) | Already connected as a workspace connector; free tier fits MVP volume, pooled connection works well with serverless functions |
 | Crawling/fetching | `fetch` + `cheerio` for HTML parsing | No headless browser needed for a single-page static analysis pass; keeps cold starts fast |
 | Performance signals | Google PageSpeed Insights API (Lighthouse under the hood) | Avoids running headless Chrome ourselves; free, well-documented API |
 | AI report generation | Claude API (Messages API, prompt caching for the system prompt) | Already the house model; use `claude-sonnet-5` |
@@ -48,17 +48,17 @@ follow_ups
 
 ## Phases
 
-### Phase 0 — Foundations ✅ (schema + tooling done; first migration pending a provisioned DB)
+### Phase 0 — Foundations ✅ done
 - [x] Add Prisma (`prisma`, `@prisma/client`) with the `leads` / `audits` / `follow_ups` schema above (`prisma/schema.prisma`).
 - [x] Prisma client singleton at `lib/db.ts` for use in Route Handlers (Next.js hot-reload-safe pattern).
-- [x] `.env.example` documenting `DATABASE_URL`, `ANTHROPIC_API_KEY`, `PAGESPEED_API_KEY`, `RESEND_API_KEY`.
+- [x] `.env.example` documenting `DATABASE_URL`, `DIRECT_URL`, `ANTHROPIC_API_KEY`, `PAGESPEED_API_KEY`, `RESEND_API_KEY`.
 - [x] `postinstall` runs `prisma generate` automatically; added `db:generate` / `db:migrate` / `db:studio` npm scripts.
 - [x] Verified: `prisma validate`, `tsc --noEmit`, `next lint`, and `next build` all pass with the new deps in place.
-- [ ] **Still needed**: a real Postgres instance (Neon or Supabase recommended). Once provisioned:
-  1. Copy `.env.example` to `.env` and fill in `DATABASE_URL`.
-  2. Run `npm run db:migrate` to create the first migration and apply the schema.
-  3. `npm run db:studio` should show empty `Lead` / `Audit` / `FollowUp` tables.
-- **Exit criteria**: `npx prisma studio` shows empty `leads`/`audits` tables locally. *(Blocked only on DB provisioning — schema/tooling side is complete.)*
+- [x] Postgres provisioned: Supabase project `wnxkwxgvjwpchaztnhol` (`PrinceNjabulo's Project`, eu-west-1). The `init` migration (`prisma/migrations/20260904185800_init/`) was applied directly via the Supabase MCP connector, creating `Lead`/`Audit`/`FollowUp` with the enums, indexes, and cascading foreign keys from the schema.
+- [x] Smoke-tested end to end: inserted a `Lead` → `Audit` → `FollowUp` chain, verified the joins and enum columns, then deleted the `Lead` and confirmed the cascade removed the child rows.
+- [x] RLS is enabled by default on all three tables (Supabase project default) with no policies — fine for now since the app talks to Postgres directly via `DATABASE_URL`/Prisma (bypasses PostgREST/RLS), not through the Supabase client SDK. Revisit if a later phase adds client-side Supabase SDK access to these tables.
+- **Local setup**: copy `.env.example` to `.env`, fill in `DATABASE_URL` (pooled, port 6543) and `DIRECT_URL` (direct, port 5432) from the Supabase dashboard (Project Settings → Database → Connection string, project ref `wnxkwxgvjwpchaztnhol`) — the password isn't retrievable via the API/MCP connector, so it has to come from the dashboard. `npm run db:studio` then points at the live tables.
+- **Exit criteria met**: `Lead` / `Audit` / `FollowUp` tables exist on the connected Supabase project and round-trip data correctly.
 
 ### Phase 1 — Audit landing page + lead capture
 - New route (e.g. `/audit`) with a form: URL + email (+ optional company name).
