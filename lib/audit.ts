@@ -58,7 +58,7 @@ export const AUDIT_STATUS_COPY: Record<AuditStatusValue, { label: string; descri
   },
   done: {
     label: "Report ready",
-    description: "Check your inbox — we've emailed your full report.",
+    description: "Your audit is complete.",
   },
   failed: {
     label: "Something went wrong",

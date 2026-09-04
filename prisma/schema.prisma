@@ -62,8 +62,15 @@ model Audit {
   reportMarkdown String?
   reportHtml     String?
 
-  createdAt   DateTime  @default(now())
-  completedAt DateTime?
+  createdAt       DateTime  @default(now())
+  completedAt     DateTime?
+  // Claim marker for report generation: unlike the crawl/analyze steps,
+  // there's no distinct AuditStatus value to flip into as a claim before
+  // "done" (flipping there early would show a failed attempt as complete),
+  // and a duplicate generation call has a real dollar cost, unlike the
+  // free/cheap earlier stages. Set atomically (WHERE reportStartedAt IS
+  // NULL) at the start of report generation.
+  reportStartedAt DateTime?
 
   followUps FollowUp[]
 

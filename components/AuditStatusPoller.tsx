@@ -18,6 +18,7 @@ export type AuditStatusPayload = {
 const STAGE_ENDPOINTS: Partial<Record<AuditStatusValue, string>> = {
   pending: "process",
   analyzing: "analyze",
+  generating: "generate",
 };
 
 export function AuditStatusPoller({ initialAudit }: { initialAudit: AuditStatusPayload }) {
