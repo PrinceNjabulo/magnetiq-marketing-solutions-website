@@ -12,19 +12,30 @@ export type AuditStatusPayload = {
   failureReason: string | null;
 };
 
+// Maps a status to the endpoint that advances an audit out of it. Each
+// endpoint atomically claims its status before doing work, so firing one
+// more than once (e.g. two open tabs) is always safe.
+const STAGE_ENDPOINTS: Partial<Record<AuditStatusValue, string>> = {
+  pending: "process",
+  analyzing: "analyze",
+};
+
 export function AuditStatusPoller({ initialAudit }: { initialAudit: AuditStatusPayload }) {
   const [auditData, setAuditData] = useState(initialAudit);
-  const initialStatusRef = useRef(initialAudit.status);
+  const firedStagesRef = useRef(new Set<string>());
 
-  // Kick off processing once, only if the page loaded with the audit still
-  // queued. The API route is idempotent (it claims pending -> crawling
-  // atomically), so this is safe even if it somehow fired twice.
+  // Fire the trigger for whatever stage the audit is currently in — on
+  // mount, and again whenever polling reveals a new status — so processing
+  // continues even if the page loaded mid-crawl. Each stage only fires
+  // once per page view.
   useEffect(() => {
-    if (initialStatusRef.current !== "pending") return;
-    fetch(`/api/audit/${initialAudit.id}/process`, { method: "POST" }).catch(() => {
-      // If this fails, the audit just stays "pending" until the next visit.
+    const endpoint = STAGE_ENDPOINTS[auditData.status];
+    if (!endpoint || firedStagesRef.current.has(auditData.status)) return;
+    firedStagesRef.current.add(auditData.status);
+    fetch(`/api/audit/${auditData.id}/${endpoint}`, { method: "POST" }).catch(() => {
+      // If this fails, the audit just stays at this stage until the next visit.
     });
-  }, [initialAudit.id]);
+  }, [auditData.id, auditData.status]);
 
   useEffect(() => {
     if (!ACTIVE_AUDIT_STATUSES.includes(auditData.status)) return;

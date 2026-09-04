@@ -3,6 +3,7 @@ import { db } from "@/lib/db";
 import { fetchHtml, CrawlError } from "@/lib/crawler";
 import { extractPageData } from "@/lib/pageParser";
 import { fetchPageSpeed } from "@/lib/pagespeed";
+import type { RawCrawlData } from "@/lib/rawCrawlData";
 
 // Single-page crawl + PageSpeed calls can take a while; give this route
 // room to run on platforms that support a longer function duration.
@@ -34,23 +35,22 @@ export async function POST(_request: Request, { params }: { params: { id: string
       fetchPageSpeed(audit.url, "desktop"),
     ]);
 
+    const rawCrawlJson: RawCrawlData = {
+      fetchedAt: new Date().toISOString(),
+      finalUrl,
+      httpStatus,
+      page,
+      pageSpeed: {
+        mobile: mobile.status === "fulfilled" ? mobile.value : null,
+        mobileError: mobile.status === "rejected" ? String(mobile.reason) : null,
+        desktop: desktop.status === "fulfilled" ? desktop.value : null,
+        desktopError: desktop.status === "rejected" ? String(desktop.reason) : null,
+      },
+    };
+
     await db.audit.update({
       where: { id: audit.id },
-      data: {
-        status: "analyzing",
-        rawCrawlJson: {
-          fetchedAt: new Date().toISOString(),
-          finalUrl,
-          httpStatus,
-          page,
-          pageSpeed: {
-            mobile: mobile.status === "fulfilled" ? mobile.value : null,
-            mobileError: mobile.status === "rejected" ? String(mobile.reason) : null,
-            desktop: desktop.status === "fulfilled" ? desktop.value : null,
-            desktopError: desktop.status === "rejected" ? String(desktop.reason) : null,
-          },
-        },
-      },
+      data: { status: "analyzing", rawCrawlJson },
     });
 
     return NextResponse.json({ ok: true });
